@@ -35,6 +35,17 @@ minikube addons enable ingress
 kubectl describe ingress
 ```
 
+## Build & deploy
+
+```
+./gradlew clean dockerBuildImage
+./gradlew deploy
+
+# Only need to run these if these configs have changed
+kubectl apply -f hotdog-api/api.service.yaml
+kubectl apply -f hotdog-api/api.ingress.yaml
+```
+
 ## hotdog-api routes
 
 - `/` (Returns `200`, empty body)
