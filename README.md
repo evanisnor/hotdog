@@ -1,4 +1,4 @@
-# Docker + minikube + hyperkit
+# Spring Webflux + Docker + minikube + hyperkit
 ## Dependencies
 ```
 brew cask install docker
@@ -34,3 +34,8 @@ minikube addons enable ingress
 ```
 kubectl describe ingress
 ```
+
+## hotdog-api routes
+
+- `/` (Returns `200`, empty body)
+- `/hello` (Returns `200` with `hello` as text)
