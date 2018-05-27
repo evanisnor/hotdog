@@ -45,7 +45,6 @@ task createKubeConfig {
   if (!kubernetesBuildDir.exists()) {
     kubernetesBuildDir.mkdir()
   }
-  kubernetesBuildDir.mkdirs()
   def writer = new FileWriter(kubernetesBuildDir.path + "/${deploymentConfig}")
   yaml.dump(template, writer)
   println "Created Kubernetes config for ${project.name}"
