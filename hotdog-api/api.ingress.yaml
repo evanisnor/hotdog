@@ -1,0 +1,10 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hotdog-api-ingress
+  annotations:
+    kubernetes.io/ingress.allow-http: "true"
+spec:
+  backend:
+    serviceName: hotdog-api-service
+    servicePort: 8080

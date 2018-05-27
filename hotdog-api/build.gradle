@@ -1,0 +1,68 @@
+apply plugin: 'kotlin'
+apply plugin: "kotlin-spring"
+apply plugin: 'application'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'com.cinnober.gradle.semver-git'
+apply plugin: 'com.bmuschko.docker-java-application'
+
+
+import org.yaml.snakeyaml.DumperOptions
+import org.yaml.snakeyaml.Yaml
+
+sourceSets {
+  main.java.srcDirs += 'src/main/kotlin/'
+}
+
+mainClassName = 'com.evanisnor.hotdog.api.ApiApplicationKt'
+
+def deploymentConfig = "api.deployment.yaml"
+
+jar {
+  baseName = "$project.name"
+  version = "$version"
+}
+
+docker {
+  javaApplication {
+    baseImage = "openjdk:8-jdk-alpine"
+    tag = "${System.env.USER}/${name}:${version}"
+    port = 8080
+    exec {
+      entryPoint "java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/${project.name}/lib/${project.name}-${version}.jar"
+    }
+  }
+}
+
+task createKubeConfig {
+  def options = new DumperOptions()
+  options.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN)
+  options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
+  def yaml = new Yaml(options)
+  def template = yaml.load(file(deploymentConfig).text)
+
+  template['spec']['template']['spec']['containers'][0]['image'] = "${System.env.USER}/${project.name}:${version}".toString()
+  def kubernetesBuildDir = new File("${buildDir}/kubernetes")
+  if (!kubernetesBuildDir.exists()) {
+    kubernetesBuildDir.mkdir()
+  }
+  kubernetesBuildDir.mkdirs()
+  def writer = new FileWriter(kubernetesBuildDir.path + "/${deploymentConfig}")
+  yaml.dump(template, writer)
+  println "Created Kubernetes config for ${project.name}"
+}
+
+task deploy(type: Exec) {
+  workingDir "$buildDir/kubernetes"
+  commandLine 'kubectl', 'apply', '-f', "${deploymentConfig}"
+}
+
+
+deploy.dependsOn(createKubeConfig)
+dockerBuildImage.dependsOn(build)
+
+dependencies {
+  compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$lib.kotlin"
+  compile "org.jetbrains.kotlin:kotlin-reflect:$lib.kotlin"
+  compile "com.fasterxml.jackson.module:jackson-module-kotlin:$lib.jackson"
+  compile "org.springframework.boot:spring-boot-starter-webflux:$lib.springBoot"
+}
